@@ -330,26 +330,32 @@ void UDPComponent::add_data_(uint8_t key, const char *id, uint32_t data) {
   add(this->data_, id);
 }
 void UDPComponent::send_data_(bool all) {
-  if (!this->should_send_ || !network::is_connected())
+  if (!this->should_send_)
     return;
-  this->init_data_();
-#ifdef USE_SENSOR
-  for (auto &sensor : this->sensors_) {
-    if (all || sensor.updated) {
-      sensor.updated = false;
-      this->add_data_(SENSOR_KEY, sensor.id, sensor.sensor->get_state());
+  for (int i = 0; i < 5; i++) {
+    if (!network::is_connected()) {
+      sleep(10);
+      continue;
     }
+    this->init_data_();
+    #ifdef USE_SENSOR
+      for (auto &sensor : this->sensors_) {
+        if (all || sensor.updated) {
+          sensor.updated = false;
+          this->add_data_(SENSOR_KEY, sensor.id, sensor.sensor->get_state());
+        }
+      }
+    #endif
+    #ifdef USE_BINARY_SENSOR
+      for (auto &sensor : this->binary_sensors_) {
+        if (all || sensor.updated) {
+          sensor.updated = false;
+          this->add_binary_data_(BINARY_SENSOR_KEY, sensor.id, sensor.sensor->state);
+        }
+      }
+    #endif
+    this->flush_();
   }
-#endif
-#ifdef USE_BINARY_SENSOR
-  for (auto &sensor : this->binary_sensors_) {
-    if (all || sensor.updated) {
-      sensor.updated = false;
-      this->add_binary_data_(BINARY_SENSOR_KEY, sensor.id, sensor.sensor->state);
-    }
-  }
-#endif
-  this->flush_();
   this->updated_ = false;
   this->resend_data_ = false;
 }
