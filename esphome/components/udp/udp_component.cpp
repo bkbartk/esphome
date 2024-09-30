@@ -330,12 +330,9 @@ void UDPComponent::add_data_(uint8_t key, const char *id, uint32_t data) {
   add(this->data_, id);
 }
 void UDPComponent::send_data_(bool all) {
-  if (!this->should_send_)
+  if (!this->should_send_ || !network::is_connected())
     return;
   for (int i = 0; i < 5; i++) {
-    if (!network::is_connected()) {
-      continue;
-    }
     this->init_data_();
     #ifdef USE_SENSOR
       for (auto &sensor : this->sensors_) {
@@ -355,6 +352,20 @@ void UDPComponent::send_data_(bool all) {
     #endif
     this->flush_();
   }
+   #ifdef USE_SENSOR
+      for (auto &sensor : this->sensors_) {
+        if (all || sensor.updated) {
+          sensor.updated = false;
+        }
+      }
+    #endif
+    #ifdef USE_BINARY_SENSOR
+      for (auto &sensor : this->binary_sensors_) {
+        if (all || sensor.updated) {
+          sensor.updated = false;
+        }
+      }
+    #endif
   this->updated_ = false;
   this->resend_data_ = false;
 }
