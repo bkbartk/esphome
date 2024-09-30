@@ -334,7 +334,6 @@ void UDPComponent::send_data_(bool all) {
     return;
   for (int i = 0; i < 5; i++) {
     if (!network::is_connected()) {
-      sleep(10);
       continue;
     }
     this->init_data_();
